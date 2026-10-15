@@ -46,15 +46,19 @@
                VerticalOffset="4">
             <Border Classes="popup-border popup-surface"
                     Classes.open="{Binding #FontSizePopup.IsOpen}">
-                <ItemsControl ItemsSource="{Binding FontSizeOptions, ElementName=FontSizePickerDropdownRoot}">
+                <StackPanel Spacing="8">
+                <NumericUpDown x:Name="CustomFontSize" Minimum="1" Maximum="4096" Increment="1"
+                               Value="30" FormatString="0.##" ValueChanged="OnCustomFontSizeChanged"
+                               ToolTip.Tip="1–4096 pt"/>
+                <ItemsControl x:Name="FontSizeItems" ItemsSource="{Binding FontSizeOptions, ElementName=FontSizePickerDropdownRoot}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Vertical"/>
+                            <UniformGrid Columns="3"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="x:Single">
-                            <Button MinWidth="50"
+                            <Button MinWidth="72"
                                     Height="32"
                                     Padding="8,0"
                                     Classes="picker-button"
@@ -69,6 +73,7 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                </StackPanel>
             </Border>
         </Popup>
     </Grid>

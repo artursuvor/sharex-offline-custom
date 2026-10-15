@@ -876,6 +876,7 @@ namespace ShareX
 
         public UploadResult UploadData(IGenericUploaderService service, Stream stream, string fileName)
         {
+            if (OfflinePolicy.IsOffline) OfflinePolicy.DenyNetwork();
             if (!service.CheckConfig(ApplicationState.UploadersConfig))
             {
                 return GetInvalidConfigResult(service);
@@ -965,6 +966,7 @@ namespace ShareX
 
         public UploadResult ShortenURL(string url)
         {
+            if (OfflinePolicy.IsOffline) OfflinePolicy.DenyNetwork();
             URLShortenerService service = UploaderFactory.URLShortenerServices[Info.TaskSettings.URLShortenerDestination];
 
             if (!service.CheckConfig(ApplicationState.UploadersConfig))
@@ -984,6 +986,7 @@ namespace ShareX
 
         public UploadResult ShareURL(string url)
         {
+            if (OfflinePolicy.IsOffline) OfflinePolicy.DenyNetwork();
             if (!string.IsNullOrEmpty(url))
             {
                 URLSharingService service = UploaderFactory.URLSharingServices[Info.TaskSettings.URLSharingServiceDestination];

@@ -515,6 +515,7 @@ namespace ShareX.HelpersLib
 
         public static string SendPing(string host, int count)
         {
+            OfflinePolicy.DenyNetwork();
             string[] status = new string[count];
 
             using (Ping ping = new Ping())

@@ -34,6 +34,7 @@ namespace ShareX.HelpersLib
     {
         public static PingResult PingHost(string host, int timeout = 1000, int pingCount = 4, int waitTime = 100)
         {
+            OfflinePolicy.DenyNetwork();
             PingResult pingResult = new PingResult();
             IPAddress address = GetIpFromHost(host);
             byte[] buffer = new byte[32];

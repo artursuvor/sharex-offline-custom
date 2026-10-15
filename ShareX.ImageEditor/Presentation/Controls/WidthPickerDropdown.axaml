@@ -18,6 +18,7 @@
                 <Grid Grid.Column="0"
                       Width="24"
                       Height="24"
+                      ClipToBounds="True"
                       VerticalAlignment="Center"
                       Margin="0,0,6,0">
                     <Ellipse Width="{Binding SelectedWidth, ElementName=WidthPickerDropdownRoot}"
@@ -28,7 +29,8 @@
                 </Grid>
 
                 <!-- Spacer -->
-                <Border Grid.Column="1"/>
+                <TextBlock Grid.Column="1" Margin="0,0,6,0" VerticalAlignment="Center"
+                           Text="{Binding SelectedWidth, ElementName=WidthPickerDropdownRoot, StringFormat='{}{0} px'}"/>
 
                 <!-- Chevron Icon (Lucide ChevronDown) -->
                 <TextBlock Grid.Column="2"
@@ -51,7 +53,11 @@
                VerticalOffset="4">
             <Border Classes="popup-border popup-surface"
                     Classes.open="{Binding #WidthPopup.IsOpen}">
-                <ItemsControl ItemsSource="{Binding WidthOptions, ElementName=WidthPickerDropdownRoot}">
+                <StackPanel Spacing="8">
+                <NumericUpDown x:Name="CustomWidth" Minimum="1" Maximum="4096" Increment="1"
+                               Value="4" FormatString="0" ValueChanged="OnCustomWidthChanged"
+                               ToolTip.Tip="1–4096 px"/>
+                <ItemsControl x:Name="WidthItems" ItemsSource="{Binding WidthOptions, ElementName=WidthPickerDropdownRoot}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <UniformGrid Columns="5"/>
@@ -59,24 +65,19 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="x:Int32">
-                            <Button Width="32"
+                            <Button Width="44"
                                     Height="32"
                                     Padding="0"
                                     Classes="picker-button"
                                     Click="OnWidthSelected"
                                     CommandParameter="{Binding .}"
                                     ToolTip.Tip="{Binding ., StringFormat='{}{0} px'}">
-                                <Grid Width="24" Height="24">
-                                    <Ellipse Width="{Binding .}"
-                                             Height="{Binding .}"
-                                             Fill="{DynamicResource ShareX.Brush.Text.Secondary}"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"/>
-                                </Grid>
+                                <TextBlock Text="{Binding .}" FontSize="12"/>
                             </Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                </StackPanel>
             </Border>
         </Popup>
     </Grid>

@@ -71,13 +71,27 @@ namespace ShareX.ImageEditor.Presentation.Controls
 
         private void OnPopupOpened(object? sender, EventArgs e)
         {
+            if (this.FindControl<NumericUpDown>("CustomWidth") is { } input)
+                input.Value = SelectedWidth;
             UpdateActiveStates();
+        }
+
+        private void OnCustomWidthChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+        {
+            if (e.NewValue is decimal value && value >= 1 && value <= 4096)
+            {
+                int width = (int)Math.Round(value);
+                if (SelectedWidth == width) return;
+                SelectedWidth = width;
+                WidthChanged?.Invoke(this, width);
+                UpdateActiveStates();
+            }
         }
 
         private void UpdateActiveStates()
         {
             var popup = this.FindControl<Popup>("WidthPopup");
-            if (popup?.Child is Border border && border.Child is ItemsControl itemsControl)
+            if (this.FindControl<ItemsControl>("WidthItems") is { } itemsControl)
             {
                 foreach (var item in itemsControl.GetRealizedContainers())
                 {
@@ -126,7 +140,7 @@ namespace ShareX.ImageEditor.Presentation.Controls
 
         private static IEnumerable<int> GetDefaultWidthOptions()
         {
-            return new List<int> { 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 };
+            return new List<int> { 1, 2, 4, 8, 12, 20, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
         }
     }
 }

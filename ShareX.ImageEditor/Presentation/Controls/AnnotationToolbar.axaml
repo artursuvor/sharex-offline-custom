@@ -213,6 +213,9 @@
                                                   IsVisible="{Binding ShowThickness}"
                                                   ToolTip.Tip="{x:Static res:Strings.AnnotationToolbar_Thickness}"/>
 
+                    <Button Content="100%" Height="40" Click="OnOpaqueColorsClick"
+                            ToolTip.Tip="Непрозрачные кисть и заливка"/>
+
                     <controls:BorderStylePickerDropdown x:Name="BorderStylePicker"
                                                         BorderStyleOptions="{Binding AvailableBorderStyles}"
                                                         SelectedBorderStyle="{Binding SelectedBorderStyle, Mode=TwoWay}"

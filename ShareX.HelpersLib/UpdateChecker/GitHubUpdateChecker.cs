@@ -51,6 +51,7 @@ namespace ShareX.HelpersLib
 
         public override async Task CheckUpdateAsync()
         {
+            if (OfflinePolicy.IsOffline) return;
             try
             {
                 GitHubRelease latestRelease = await GetLatestRelease(IncludePreRelease);

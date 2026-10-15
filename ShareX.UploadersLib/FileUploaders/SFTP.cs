@@ -194,6 +194,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
         private void EnsureClient()
         {
+            ShareX.HelpersLib.OfflinePolicy.DenyNetwork();
             if (client != null)
             {
                 return;

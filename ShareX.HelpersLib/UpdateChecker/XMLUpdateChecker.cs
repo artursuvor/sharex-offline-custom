@@ -44,6 +44,7 @@ namespace ShareX.HelpersLib
 
         public override async Task CheckUpdateAsync()
         {
+            if (OfflinePolicy.IsOffline) return;
             try
             {
                 string response = await WebHelpers.DownloadStringAsync(URL);

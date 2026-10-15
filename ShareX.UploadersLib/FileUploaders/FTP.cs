@@ -105,6 +105,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
         public FTP(FTPAccount account)
         {
+            ShareX.HelpersLib.OfflinePolicy.DenyNetwork();
             Account = account;
 
             client = new FtpClient()

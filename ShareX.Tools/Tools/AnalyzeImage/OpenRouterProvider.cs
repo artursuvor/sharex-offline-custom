@@ -58,7 +58,7 @@ namespace ShareX.Tools
 
         private async Task<string> AnalyzeImageInternal(string base64Image, string prompt, string reasoningEffort, string verbosity)
         {
-            using (HttpClient client = new HttpClient())
+            using (HttpClient client = ShareX.HelpersLib.HttpClientFactory.Create())
             {
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 

@@ -264,6 +264,17 @@ public partial class AnnotationToolbar : UserControl
         }
     }
 
+    private void OnOpaqueColorsClick(object? sender, RoutedEventArgs e)
+    {
+        if (_toolbarAdapter == null) return;
+        Color stroke = Color.Parse(_toolbarAdapter.StrokeColor);
+        Color fill = Color.Parse(_toolbarAdapter.FillColor);
+        // An unset (transparent) fill adopts the current pen color.
+        if (fill.A == 0) fill = stroke;
+        _toolbarAdapter.SelectedColorBrush = new SolidColorBrush(Color.FromRgb(stroke.R, stroke.G, stroke.B));
+        _toolbarAdapter.FillColorBrush = new SolidColorBrush(Color.FromRgb(fill.R, fill.G, fill.B));
+    }
+
     private void OnUndoClick(object? sender, RoutedEventArgs e)
     {
         if (DataContext is IAnnotationToolbarAdapter toolbar)

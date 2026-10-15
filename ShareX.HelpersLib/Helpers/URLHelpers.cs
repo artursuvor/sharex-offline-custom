@@ -49,6 +49,8 @@ namespace ShareX.HelpersLib
 
         public static void OpenURL(string url)
         {
+            // Do not delegate network requests to the default browser either.
+            if (OfflinePolicy.IsOffline) return;
             if (!string.IsNullOrEmpty(url))
             {
                 Task.Run(() =>

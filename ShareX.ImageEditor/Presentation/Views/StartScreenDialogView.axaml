@@ -105,7 +105,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding LoadFromUrlCommand}"
+                    <Button IsVisible="False" Command="{Binding LoadFromUrlCommand}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Padding="12,10" Height="42">
                         <StackPanel Orientation="Horizontal" Spacing="12">

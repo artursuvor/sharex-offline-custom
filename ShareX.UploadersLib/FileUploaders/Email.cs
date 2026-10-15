@@ -111,6 +111,7 @@ namespace ShareX.UploadersLib.FileUploaders
 
         public void Send(string toEmail, string subject, string body, Stream stream, string fileName)
         {
+            ShareX.HelpersLib.OfflinePolicy.DenyNetwork();
             using (SmtpClient smtp = new SmtpClient()
             {
                 Host = SmtpServer,

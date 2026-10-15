@@ -1424,11 +1424,7 @@ namespace ShareX
                     Bitmap bmp = skBitmap.Copy();
                     PinToScreen(bmp, taskSettings);
                 },
-                UploadImageRequested = (skBitmap) =>
-                {
-                    Bitmap bmp = skBitmap.Copy();
-                    UploadImageOnUiThread(bmp, taskSettings);
-                }
+                UploadImageRequested = null
             };
 
             SKBitmap skBitmapResult = null;
@@ -1633,6 +1629,7 @@ namespace ShareX
 
         public static void OpenNetworkMonitor()
         {
+            if (OfflinePolicy.IsOffline) return;
             string logFilePath = AppPaths.LogsFilePath != null
                 ? Path.Combine(AppPaths.LogsFolder, "NetworkMonitor.log")
                 : null;
@@ -1646,6 +1643,7 @@ namespace ShareX
 
         public static void OpenRemoteStorageBrowser()
         {
+            if (OfflinePolicy.IsOffline) return;
             SettingManager.WaitUploadersConfig();
 
             UploadersConfig config = ApplicationState.UploadersConfig;
@@ -1834,6 +1832,7 @@ namespace ShareX
 
         public static void AnalyzeImage(TaskSettings taskSettings = null)
         {
+            if (OfflinePolicy.IsOffline) return;
             if (taskSettings == null) taskSettings = TaskSettings.GetDefaultTaskSettings();
 
             ShowAnalyzeImageWindow(null, taskSettings);
@@ -1841,6 +1840,7 @@ namespace ShareX
 
         public static void AnalyzeImage(string filePath, TaskSettings taskSettings = null)
         {
+            if (OfflinePolicy.IsOffline) return;
             if (taskSettings == null) taskSettings = TaskSettings.GetDefaultTaskSettings();
 
             ShowAnalyzeImageWindow(filePath, taskSettings);

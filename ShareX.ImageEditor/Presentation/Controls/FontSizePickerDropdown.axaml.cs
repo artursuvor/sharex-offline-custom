@@ -71,13 +71,27 @@ namespace ShareX.ImageEditor.Presentation.Controls
 
         private void OnPopupOpened(object? sender, EventArgs e)
         {
+            if (this.FindControl<NumericUpDown>("CustomFontSize") is { } input)
+                input.Value = (decimal)SelectedFontSize;
             UpdateActiveStates();
+        }
+
+        private void OnCustomFontSizeChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+        {
+            if (e.NewValue is decimal value && value >= 1 && value <= 4096)
+            {
+                float size = (float)value;
+                if (SelectedFontSize == size) return;
+                SelectedFontSize = size;
+                FontSizeChanged?.Invoke(this, size);
+                UpdateActiveStates();
+            }
         }
 
         private void UpdateActiveStates()
         {
             var popup = this.FindControl<Popup>("FontSizePopup");
-            if (popup?.Child is Border border && border.Child is ItemsControl itemsControl)
+            if (this.FindControl<ItemsControl>("FontSizeItems") is { } itemsControl)
             {
                 foreach (var item in itemsControl.GetRealizedContainers())
                 {
@@ -130,7 +144,7 @@ namespace ShareX.ImageEditor.Presentation.Controls
 
         private static IEnumerable<float> GetDefaultFontSizes()
         {
-            return new List<float> { 10, 13, 16, 20, 24, 30, 48, 72, 96, 144, 216, 288 };
+            return new List<float> { 10, 16, 24, 30, 48, 72, 96, 144, 216, 288, 512, 768, 1024, 2048, 4096 };
         }
     }
 }

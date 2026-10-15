@@ -41,6 +41,7 @@ namespace ShareX.HelpersLib
 
         public static HttpClient Create(bool allowAutoRedirect = true, bool infiniteTimeout = false)
         {
+            if (OfflinePolicy.IsOffline) return OfflinePolicy.CreateBlockedHttpClient();
             lock (lockObject)
             {
                 IWebProxy proxy = HelpersOptions.CurrentProxy.GetWebProxy();
