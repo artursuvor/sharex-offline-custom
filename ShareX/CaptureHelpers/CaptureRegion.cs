@@ -63,20 +63,13 @@ namespace ShareX
                 frozenScreenshot = canvas.Copy();
             }
 
-            SKBitmap cursorBitmap = null;
-            Point cursorPosition = Point.Empty;
-
             if (taskSettings.CaptureSettings.ShowCursor)
             {
                 CursorData cursorData = new CursorData();
-                if (cursorData.IsVisible)
-                {
-                    using Bitmap cursor = cursorData.ToBitmap();
-                    cursorBitmap = cursor.Copy();
-                    cursorPosition = new Point(
-                        cursorData.DrawPosition.X - screenBounds.X,
-                        cursorData.DrawPosition.Y - screenBounds.Y);
-                }
+                // Composite onto the frozen image before the capture UI opens.
+                // A cursor image annotation needlessly goes through the GPU visual
+                // snapshot pipeline and can leave a rectangular artifact.
+                cursorData.DrawCursor(frozenScreenshot, screenBounds.Location);
             }
 
             AvaloniaRegionCaptureRequest request = new AvaloniaRegionCaptureRequest
@@ -85,9 +78,7 @@ namespace ShareX
                 ScreenBounds = screenBounds,
                 RegionCaptureOptions = taskSettings.CaptureSettingsReference.RegionCaptureOptions,
                 ImageEditorOptions = taskSettings.ToolsSettingsReference.ImageEditorOptions,
-                EnableAnnotations = !taskSettings.AdvancedSettings.RegionCaptureDisableAnnotation,
-                CursorBitmap = cursorBitmap,
-                CursorPosition = cursorPosition
+                EnableAnnotations = !taskSettings.AdvancedSettings.RegionCaptureDisableAnnotation
             };
 
             AvaloniaRegionCaptureResult result = await RegionCaptureIntegration.CaptureAsync(request);

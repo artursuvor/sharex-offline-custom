@@ -120,8 +120,6 @@ internal static class Program
 
     private static async Task StartApplicationAsync()
     {
-        ImageEditorIntegration.Initialize();
-
         if (ApplicationState.Settings.ShowStartScreen)
         {
             DebugHelper.WriteLine("Start screen opening.");

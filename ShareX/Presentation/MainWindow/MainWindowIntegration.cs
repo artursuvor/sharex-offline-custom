@@ -52,43 +52,57 @@ public static class MainWindowIntegration
     {
         RunOnUiThread(() =>
         {
-            if (_window == null)
+            if (!ReferenceEquals(_trayIconService, trayIconService))
             {
-                _trayIconService = trayIconService;
-                MainWindow window = new MainWindow(trayIconService);
-                _window = window;
-
-                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                if (_trayIconService != null)
                 {
-                    desktop.MainWindow = window;
+                    _trayIconService.RightButtonDown -= OnTrayIconRightButtonDown;
+                    _trayIconService.RightButtonUp -= OnTrayIconRightButtonUp;
                 }
-
-                window.Closed += (_, _) =>
-                {
-                    if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime &&
-                        ReferenceEquals(lifetime.MainWindow, window))
-                    {
-                        lifetime.MainWindow = null;
-                    }
-
-                    _window = null;
-                    _isVisible = false;
-                };
+                _trayIconService = trayIconService;
+                _trayIconService.RightButtonDown += OnTrayIconRightButtonDown;
+                _trayIconService.RightButtonUp += OnTrayIconRightButtonUp;
             }
 
             if (show)
             {
-                _window.ShowAndActivate();
-                _isVisible = true;
+                Activate();
             }
         });
     }
+
+    // Hotkeys and capture do not need the gallery, thumbnails or tray menu UI.
+    private static MainWindow? EnsureWindow()
+    {
+        if (_window != null || _trayIconService == null) return _window;
+
+        MainWindow window = new(_trayIconService);
+        _window = window;
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.MainWindow = window;
+        }
+        window.Closed += (_, _) =>
+        {
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime &&
+                ReferenceEquals(lifetime.MainWindow, window))
+            {
+                lifetime.MainWindow = null;
+            }
+            _window = null;
+            _isVisible = false;
+        };
+        return window;
+    }
+
+    private static void OnTrayIconRightButtonDown() => RunOnUiThread(() => _window?.OnTrayIconRightButtonDown());
+    private static void OnTrayIconRightButtonUp() => RunOnUiThread(() => EnsureWindow()?.OnTrayIconRightButtonUp());
 
     public static void Activate()
     {
         RunOnUiThread(() =>
         {
-            _window?.ShowAndActivate();
+            EnsureWindow()?.ShowAndActivate();
             _isVisible = _window?.IsVisible == true;
         });
     }
@@ -124,7 +138,7 @@ public static class MainWindowIntegration
 
     public static void SetTrayIcon(byte[] iconBytes) => RunOnUiThread(() => _trayIconService?.SetIcon(iconBytes));
 
-    public static void ShowTrayMenu() => RunOnUiThread(() => _window?.ShowTrayMenu());
+    public static void ShowTrayMenu() => RunOnUiThread(() => EnsureWindow()?.ShowTrayMenu());
 
     public static void RefreshMenus() => RunOnUiThread(() => _window?.RefreshMenus());
 

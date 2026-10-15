@@ -6,6 +6,10 @@ using ShareX.HelpersLib;
 if (!OfflinePolicy.IsOffline || !ShareX.SystemOptions.DisableUpload || !ShareX.SystemOptions.DisableUpdateCheck)
     throw new Exception("Offline build flags are not enforced.");
 
+ShareX.SystemOptions.UpdateSystemOptions();
+if (!ShareX.SystemOptions.DisableLogging)
+    throw new Exception("Disk logging must stay disabled in this build.");
+
 var listener = new TcpListener(IPAddress.Loopback, 0);
 listener.Start();
 var port = ((IPEndPoint)listener.LocalEndpoint).Port;

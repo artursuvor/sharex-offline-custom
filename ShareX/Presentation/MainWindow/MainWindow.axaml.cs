@@ -108,9 +108,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         TitleBarIcon = CreateTitleBarIcon();
         DataContext = this;
 
-        _trayIconService.RightButtonDown += OnTrayIconRightButtonDown;
-        _trayIconService.RightButtonUp += OnTrayIconRightButtonUp;
-
         BuildNavigation();
         ConfigureWindowHeightFromNavigation();
         RestoreWindowBounds();
@@ -133,7 +130,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Resized += (_, _) => SaveWindowBounds();
         KeyDown += OnWindowKeyDown;
 
-        Dispatcher.UIThread.Post(WarmUpTrayMenu, DispatcherPriority.Background);
     }
 
     public void ShowAndActivate()
@@ -244,48 +240,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             menu.Closed -= OnTrayMenuClosed;
             CloseTrayMenuAnchor();
             throw;
-        }
-    }
-
-    private void WarmUpTrayMenu()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        Window anchor = CreateTrayMenuAnchor(new PixelPoint(-32000, -32000));
-        anchor.ShowActivated = false;
-        anchor.Topmost = false;
-        ContextMenu menu = BuildContextMenu(_trayMenuBuilder.BuildTrayMenu());
-        menu.Opacity = 0;
-        menu.IsHitTestVisible = false;
-
-        try
-        {
-            anchor.Show();
-            menu.Open(anchor);
-
-            // Leave the invisible popup attached for one layout pass so Avalonia
-            // creates its popup host, templates and styles before the first click.
-            Dispatcher.UIThread.Post(() =>
-            {
-                menu.Close();
-
-                if (anchor.IsVisible)
-                {
-                    anchor.Close();
-                }
-            }, DispatcherPriority.Loaded);
-        }
-        catch (Exception e)
-        {
-            DebugHelper.WriteException(e);
-
-            if (anchor.IsVisible)
-            {
-                anchor.Close();
-            }
         }
     }
 
@@ -1964,7 +1918,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void OnTrayIconRightButtonDown()
+    internal void OnTrayIconRightButtonDown()
     {
         Dispatcher.UIThread.Post(() =>
         {
@@ -1976,7 +1930,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         });
     }
 
-    private void OnTrayIconRightButtonUp()
+    internal void OnTrayIconRightButtonUp()
     {
         Dispatcher.UIThread.Post(() =>
         {
@@ -2068,8 +2022,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ResetThumbnailDrag();
         CloseActiveContextMenu();
         CloseTrayMenuAnchor();
-        _trayIconService.RightButtonDown -= OnTrayIconRightButtonDown;
-        _trayIconService.RightButtonUp -= OnTrayIconRightButtonUp;
         _trayIconService.Visible = false;
         TitleBarIcon.Dispose();
 

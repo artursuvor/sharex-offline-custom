@@ -38,7 +38,7 @@ namespace ShareX
         public TaskSettings DefaultTaskSettings = new TaskSettings();
 
         public DateTime FirstTimeRunDate = DateTime.Now;
-        public bool ShowStartScreen = true;
+        public bool ShowStartScreen = false;
         public string FileUploadDefaultDirectory = "";
         public int NameParserAutoIncrementNumber = 0;
         public List<QuickTaskInfo> QuickTaskPresets = QuickTaskInfo.DefaultPresets;
@@ -57,7 +57,7 @@ namespace ShareX
 
         public SupportedLanguage Language = SupportedLanguage.Automatic;
         public bool ShowTray = true;
-        public bool SilentRun = false;
+        public bool SilentRun = true;
         public bool TrayIconProgressEnabled = true;
         public bool TaskbarProgressEnabled = true;
         public bool UseWhiteShareXIcon = false;
