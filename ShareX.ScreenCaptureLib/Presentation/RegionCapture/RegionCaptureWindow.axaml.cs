@@ -70,6 +70,10 @@ public partial class RegionCaptureWindow : Window
     private Grid _captureToolbar = null!;
     private AnnotationToolbar _annotationToolbar = null!;
     private Button _regionToolButton = null!;
+    private Border _captureActions = null!;
+    private NumericUpDown _selectionWidth = null!;
+    private NumericUpDown _selectionHeight = null!;
+    private bool _updatingSelectionSize;
     private StackPanel _magnifierPanel = null!;
     private Grid _magnifierView = null!;
     private Image _magnifierImage = null!;
@@ -92,7 +96,6 @@ public partial class RegionCaptureWindow : Window
     private readonly TranslateTransform _magnifierTransform = new();
     private double _captureToolbarCenterX = double.NaN;
     private double _captureToolbarTop = double.NaN;
-    private double _positionedCaptureToolbarWidth = double.NaN;
     private int _imageWidth;
     private int _imageHeight;
     private bool _regionToolActive = true;
@@ -114,6 +117,7 @@ public partial class RegionCaptureWindow : Window
         Topmost = true;
 #endif
         ResolveControls();
+        AddHandler(KeyDownEvent, OnCaptureShortcut, RoutingStrategies.Tunnel);
         AddHandler(PointerPressedEvent, OnCaptureHostPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(PointerMovedEvent, OnCaptureHostPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(PointerReleasedEvent, OnCaptureHostPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -194,8 +198,9 @@ public partial class RegionCaptureWindow : Window
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        bool textInput = e.Source is TextBox || (e.Source as Visual)?.FindAncestorOfType<TextBox>() != null;
         if (_keyboardInputEnabled && !_closing && _request != null &&
-            e.Key == Key.Tab && e.KeyModifiers == KeyModifiers.None && _viewModel?.IsModalOpen != true)
+            !textInput && e.Key == Key.Tab && e.KeyModifiers == KeyModifiers.None && _viewModel?.IsModalOpen != true)
         {
             ActivateRegionTool();
             e.Handled = true;
@@ -224,14 +229,14 @@ public partial class RegionCaptureWindow : Window
             return;
         }
 
-        if (_regionToolActive && e.Key == Key.Enter && HasValidSelection())
+        if (_regionToolActive && !textInput && e.Key == Key.Enter && HasValidSelection())
         {
             e.Handled = true;
             Complete(_regionOverlay.SelectionRectangle);
             return;
         }
 
-        if (_regionToolActive && e.Key == Key.Space)
+        if (_regionToolActive && !textInput && e.Key == Key.Space)
         {
             e.Handled = true;
             Complete(new Rect(0, 0, _imageWidth, _imageHeight), includeWindowInfo: false);
@@ -245,7 +250,7 @@ public partial class RegionCaptureWindow : Window
             return;
         }
 
-        if (_regionToolActive && e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+        if (_regionToolActive && !textInput && e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
         {
             int distance = e.KeyModifiers.HasFlag(KeyModifiers.Shift)
                 ? RegionCaptureOptions.MoveSpeedMaximum
@@ -257,11 +262,61 @@ public partial class RegionCaptureWindow : Window
             return;
         }
 
-        if (_regionToolActive && e.Key == Key.Delete && HasValidSelection())
+        if (_regionToolActive && !textInput && e.Key == Key.Delete && HasValidSelection())
         {
             ClearSelection();
             e.Handled = true;
         }
+    }
+
+    private void OnCaptureShortcut(object? sender, KeyEventArgs e)
+    {
+        if (!_keyboardInputEnabled || _closing || _viewModel?.IsModalOpen == true) return;
+        bool textInput = e.Source is TextBox || (e.Source as Visual)?.FindAncestorOfType<TextBox>() != null;
+        if (!textInput && ((e.KeyModifiers == KeyModifiers.Control && e.Key is Key.Z or Key.Y) ||
+            (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.Z)))
+        {
+            if (e.Key == Key.Y || e.KeyModifiers.HasFlag(KeyModifiers.Shift)) _viewModel?.ToolbarAdapter.Redo();
+            else _viewModel?.ToolbarAdapter.Undo();
+            e.Handled = true;
+            return;
+        }
+        if (_request?.EnableAnnotations != true && e.Key != Key.Enter) return;
+        if (e.KeyModifiers == KeyModifiers.Control &&
+            (e.Key == Key.S || (e.Key == Key.C && !textInput) || e.Key == Key.Enter))
+        {
+            e.Handled = true;
+            if (HasValidSelection())
+                Complete(_regionOverlay.SelectionRectangle, outputAction: e.Key == Key.S
+                    ? RegionCaptureOutputAction.Save : e.Key == Key.C
+                    ? RegionCaptureOutputAction.Copy : RegionCaptureOutputAction.Workflow);
+        }
+    }
+
+    private void OnCopyCaptureClick(object? sender, RoutedEventArgs e) =>
+        Complete(_regionOverlay.SelectionRectangle, outputAction: RegionCaptureOutputAction.Copy);
+
+    private void OnSaveCaptureClick(object? sender, RoutedEventArgs e) =>
+        Complete(_regionOverlay.SelectionRectangle, outputAction: RegionCaptureOutputAction.Save);
+
+    private void OnFinishCaptureClick(object? sender, RoutedEventArgs e) => Complete(_regionOverlay.SelectionRectangle);
+    private void OnCancelCaptureClick(object? sender, RoutedEventArgs e) => CancelCapture();
+
+    private void OnRegionResizeNodePressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!SelectionResizeNode.TryGetKind((e.Source as Control)?.Tag, out _)) return;
+        ActivateRegionTool();
+        OnRegionPointerPressed(sender, e);
+    }
+
+    private void OnSelectionSizeChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_selectionWidth == null || _selectionHeight == null || _updatingSelectionSize || !HasValidSelection()) return;
+        if (!_selectionWidth.Value.HasValue || !_selectionHeight.Value.HasValue) return;
+        double width = Math.Clamp((double)decimal.Round(_selectionWidth.Value.Value), RegionCaptureOptions.MinimumSize, _imageWidth);
+        double height = Math.Clamp((double)decimal.Round(_selectionHeight.Value.Value), RegionCaptureOptions.MinimumSize, _imageHeight);
+        Rect current = _regionOverlay.SelectionRectangle;
+        SetSelection(new Rect(Math.Min(current.X, _imageWidth - width), Math.Min(current.Y, _imageHeight - height), width, height), null);
     }
 
     protected override void OnKeyUp(KeyEventArgs e)
@@ -309,6 +364,9 @@ public partial class RegionCaptureWindow : Window
         _captureToolbar.LayoutUpdated += OnCaptureToolbarLayoutUpdated;
         _annotationToolbar = this.FindControl<AnnotationToolbar>("CaptureAnnotationToolbar")!;
         _regionToolButton = this.FindControl<Button>("RegionToolButton")!;
+        _captureActions = this.FindControl<Border>("CaptureActions")!;
+        _selectionWidth = this.FindControl<NumericUpDown>("SelectionWidth")!;
+        _selectionHeight = this.FindControl<NumericUpDown>("SelectionHeight")!;
         _magnifierPanel = this.FindControl<StackPanel>("MagnifierPanel")!;
         _magnifierPanel.RenderTransform = _magnifierTransform;
         _magnifierView = this.FindControl<Grid>("MagnifierView")!;
@@ -347,10 +405,18 @@ public partial class RegionCaptureWindow : Window
         _annotationToolbar.DataContext = _viewModel.ToolbarAdapter;
         _editorWorkspace.AttachHostAnnotationToolbar(_annotationToolbar);
         _annotationToolbar.IsVisible = _request.EnableAnnotations;
+        this.FindControl<Button>("CopyCaptureButton")!.IsVisible = _request.EnableAnnotations;
+        this.FindControl<Button>("SaveCaptureButton")!.IsVisible = _request.EnableAnnotations;
+        if (!_request.EnableAnnotations)
+            ToolTip.SetTip(this.FindControl<Button>("FinishCaptureButton")!, "Подтвердить область (Ctrl+Enter)");
         _annotationToolbar.ShowToolOptions = false;
 
         _regionInputSurface.Width = _imageWidth;
         _regionInputSurface.Height = _imageHeight;
+        _regionOverlay.Width = _regionResizeNodeCanvas.Width = _imageWidth;
+        _regionOverlay.Height = _regionResizeNodeCanvas.Height = _imageHeight;
+        _selectionWidth.Maximum = _imageWidth;
+        _selectionHeight.Maximum = _imageHeight;
         _regionOverlay.DimAlpha = GetDimAlpha(_request.RegionCaptureOptions);
         _regionOverlay.ShowCenterCrosshair = _request.RegionCaptureOptions.ShowCenterCrosshair;
         _regionOverlay.ShowCursorCrosshair = _request.RegionCaptureOptions.ShowScreenCrosshair;
@@ -363,6 +429,7 @@ public partial class RegionCaptureWindow : Window
         _magnifierPanel.IsVisible = _magnifierView.IsVisible || _pointerInfoPanel.IsVisible;
         _regionToolButton.Classes.Set("active", true);
         _viewModel.SetHostToolbarToolsActive(false);
+        UpdateSelectionControls();
         Title = Localization.Strings.BaseRegionForm_InitializeComponent_Region_capture;
     }
 
@@ -591,15 +658,15 @@ public partial class RegionCaptureWindow : Window
         _interaction = RegionInteraction.None;
         _regionInputSurface.IsVisible = false;
         _regionInputSurface.IsHitTestVisible = false;
-        _regionOverlay.IsVisible = false;
-        SetRegionResizeNodesVisible(false);
+        _regionOverlay.IsVisible = true;
+        SetRegionResizeNodesVisible(HasValidSelection());
         _regionOverlay.HoverRectangle = default;
         _hoverCandidate = null;
         _regionToolButton.Classes.Set("active", false);
         _viewModel?.SetHostToolbarToolsActive(true);
         _annotationToolbar.ShowToolOptions = true;
         _magnifierPanel.IsVisible = false;
-        _selectionInfoPanel.IsVisible = false;
+        UpdateSelectionInfo();
         _editorWorkspace.Focus();
     }
 
@@ -891,7 +958,6 @@ public partial class RegionCaptureWindow : Window
         double monitorTop = screen.Bounds.Y - _request.ScreenBounds.Y;
         _captureToolbarCenterX = monitorCenterX / scale;
         _captureToolbarTop = monitorTop / scale;
-        _positionedCaptureToolbarWidth = double.NaN;
         PositionCaptureToolbar();
     }
 
@@ -910,15 +976,34 @@ public partial class RegionCaptureWindow : Window
         double toolbarWidth = _captureToolbar.Bounds.Width > 0
             ? _captureToolbar.Bounds.Width
             : _captureToolbar.DesiredSize.Width;
-        if (!double.IsFinite(toolbarWidth) || toolbarWidth <= 0 ||
-            Math.Abs(toolbarWidth - _positionedCaptureToolbarWidth) < 0.01)
+        double toolbarHeight = _captureToolbar.Bounds.Height > 0
+            ? _captureToolbar.Bounds.Height : _captureToolbar.DesiredSize.Height;
+        if (!double.IsFinite(toolbarWidth) || toolbarWidth <= 0 || !double.IsFinite(toolbarHeight))
         {
             return;
         }
 
-        _positionedCaptureToolbarWidth = toolbarWidth;
-        AvaloniaCanvas.SetLeft(_captureToolbar, _captureToolbarCenterX - toolbarWidth / 2d);
-        AvaloniaCanvas.SetTop(_captureToolbar, _captureToolbarTop);
+        Point position = new(_captureToolbarCenterX - toolbarWidth / 2d, _captureToolbarTop);
+        if (_request != null && HasValidSelection())
+        {
+            Rect selection = _regionOverlay.SelectionRectangle;
+            double scale = Math.Max(1, RenderScaling);
+            Screen? screen = Screens.ScreenFromPoint(new PixelPoint(
+                _request.ScreenBounds.X + (int)selection.Center.X,
+                _request.ScreenBounds.Y + (int)selection.Center.Y));
+            Rect viewport = screen == null ? new Rect(Bounds.Size) : new Rect(
+                (screen.Bounds.X - _request.ScreenBounds.X) / scale,
+                (screen.Bounds.Y - _request.ScreenBounds.Y) / scale,
+                screen.Bounds.Width / scale, screen.Bounds.Height / scale);
+            double maxWidth = Math.Max(200, viewport.Width - 16);
+            if (Math.Abs(_captureToolbar.MaxWidth - maxWidth) > 0.01) _captureToolbar.MaxWidth = maxWidth;
+            Rect scaledSelection = new(selection.X / scale, selection.Y / scale, selection.Width / scale, selection.Height / scale);
+            position = RegionCaptureLayout.PlaceToolbar(scaledSelection, viewport, new Size(toolbarWidth, toolbarHeight));
+        }
+        if (Math.Abs(AvaloniaCanvas.GetLeft(_captureToolbar) - position.X) > 0.01 || double.IsNaN(AvaloniaCanvas.GetLeft(_captureToolbar)))
+            AvaloniaCanvas.SetLeft(_captureToolbar, position.X);
+        if (Math.Abs(AvaloniaCanvas.GetTop(_captureToolbar) - position.Y) > 0.01 || double.IsNaN(AvaloniaCanvas.GetTop(_captureToolbar)))
+            AvaloniaCanvas.SetTop(_captureToolbar, position.Y);
     }
 
     private void OnCaptureHostPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -1112,6 +1197,25 @@ public partial class RegionCaptureWindow : Window
             UpdateRegionResizeNodePositions();
         }
         UpdateSelectionInfo();
+        UpdateSelectionControls();
+    }
+
+    private void UpdateSelectionControls()
+    {
+        bool valid = HasValidSelection();
+        _captureActions.IsVisible = valid;
+        _captureToolbar.IsVisible = valid;
+        _updatingSelectionSize = true;
+        try
+        {
+            if (valid)
+            {
+                _selectionWidth.Value = (decimal)Math.Round(_regionOverlay.SelectionRectangle.Width);
+                _selectionHeight.Value = (decimal)Math.Round(_regionOverlay.SelectionRectangle.Height);
+            }
+        }
+        finally { _updatingSelectionSize = false; }
+        PositionCaptureToolbar();
     }
 
     private void ClearSelection()
@@ -1122,6 +1226,7 @@ public partial class RegionCaptureWindow : Window
         _regionOverlay.SelectionRectangle = default;
         SetRegionResizeNodesVisible(false);
         _selectionInfoPanel.IsVisible = false;
+        UpdateSelectionControls();
         UpdateHover(_lastPointerPoint);
     }
 
@@ -1560,7 +1665,8 @@ public partial class RegionCaptureWindow : Window
             includeWindowInfo: false);
     }
 
-    private void Complete(Rect selection, bool includeWindowInfo = true)
+    private void Complete(Rect selection, bool includeWindowInfo = true,
+        RegionCaptureOutputAction outputAction = RegionCaptureOutputAction.Workflow)
     {
         if (_closing || _request == null || !RegionSelectionOverlay.IsValid(selection))
         {
@@ -1592,7 +1698,8 @@ public partial class RegionCaptureWindow : Window
             output,
             screenRectangle,
             windowInfo,
-            _viewModel?.IsDirty == true);
+            _viewModel?.IsDirty == true,
+            outputAction);
         RegionCaptureIntegration.LastRegionRectangle = screenRectangle;
         _closing = true;
         Close();

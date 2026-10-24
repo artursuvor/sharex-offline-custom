@@ -92,9 +92,19 @@ namespace ShareX
                 Bitmap output = result.Image.Copy();
                 TaskMetadata metadata = new TaskMetadata(output);
 
-                if (result.ImageModified)
+                if (result.ImageModified || (request.EnableAnnotations && !request.RegionCaptureOptions.QuickCapture))
                 {
                     AllowAnnotation = false;
+                }
+
+                if (result.OutputAction != RegionCaptureOutputAction.Workflow)
+                {
+                    taskSettings.AfterCaptureJob &= ~(AfterCaptureTasks.AnnotateImage |
+                        AfterCaptureTasks.CopyImageToClipboard | AfterCaptureTasks.SaveImageToFile |
+                        AfterCaptureTasks.SaveImageToFileWithDialog);
+                    taskSettings.AfterCaptureJob |= result.OutputAction == RegionCaptureOutputAction.Copy
+                        ? AfterCaptureTasks.CopyImageToClipboard
+                        : AfterCaptureTasks.SaveImageToFile;
                 }
 
                 if (result.WindowInfo != null)

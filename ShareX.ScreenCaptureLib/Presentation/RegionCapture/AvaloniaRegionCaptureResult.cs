@@ -31,8 +31,16 @@ using System.Drawing;
 
 namespace ShareX.ScreenCaptureLib.Presentation.RegionCapture;
 
+public enum RegionCaptureOutputAction
+{
+    Workflow,
+    Copy,
+    Save
+}
+
 public sealed record AvaloniaRegionCaptureResult(
     SKBitmap Image,
     Rectangle ScreenRectangle,
     WindowInfo? WindowInfo,
-    bool ImageModified);
+    bool ImageModified,
+    RegionCaptureOutputAction OutputAction = RegionCaptureOutputAction.Workflow);

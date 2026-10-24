@@ -37,7 +37,7 @@ namespace ShareX.ScreenCaptureLib
         public const int MoveSpeedMinimum = 1;
         public const int MoveSpeedMaximum = 10;
 
-        public bool QuickCapture = true;
+        public bool QuickCapture = false;
         public bool DetectWindows = true;
         public bool DetectControls = true;
         public bool ActiveMonitorMode = false;

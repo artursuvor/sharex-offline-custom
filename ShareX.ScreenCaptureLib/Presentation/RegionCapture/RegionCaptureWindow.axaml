@@ -41,17 +41,19 @@
         <LayoutTransformControl x:Name="RegionTransform"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
-            <Grid x:Name="RegionInputSurface"
+            <Grid>
+                <Grid x:Name="RegionInputSurface"
                   Background="Transparent"
                   Focusable="True"
                   PointerPressed="OnRegionPointerPressed"
                   PointerMoved="OnRegionPointerMoved"
                   PointerReleased="OnRegionPointerReleased"
-                  PointerWheelChanged="OnRegionPointerWheelChanged">
+                  PointerWheelChanged="OnRegionPointerWheelChanged"/>
                 <capture:RegionSelectionOverlay x:Name="RegionOverlay"
                                                 AccentBrush="{DynamicResource ShareX.Brush.Accent.Start}"
                                                 IsHitTestVisible="False"/>
-                <Canvas x:Name="RegionResizeNodeCanvas" IsVisible="False"/>
+                <Canvas x:Name="RegionResizeNodeCanvas" IsVisible="False"
+                        PointerPressed="OnRegionResizeNodePressed"/>
             </Grid>
         </LayoutTransformControl>
 
@@ -114,20 +116,43 @@
         <!-- Capture host toolbar: rectangle selection plus the shared non-destructive editor tools. -->
         <Canvas>
             <Grid x:Name="CaptureToolbar"
+                  RowDefinitions="Auto,Auto"
                   Classes="capture-toolbar"
                   MaxWidth="{Binding Bounds.Width, RelativeSource={RelativeSource AncestorType=Window}}">
                 <editorControls:AnnotationToolbar x:Name="CaptureAnnotationToolbar"
                                                   MainToolbarBorderThickness="1"
                                                   MainToolbarCornerRadius="0,0,4,4"
-                                                  ShowEditingActions="False">
+                                                  ShowEditingActions="True">
                     <editorControls:AnnotationToolbar.MainToolbarLeadingContent>
                         <Button x:Name="RegionToolButton"
                                 Classes="toolbar-button active"
                                 Click="OnRegionToolClick"
-                                ToolTip.Tip="{x:Static localization:Strings.RegionCaptureWindow_RectangleRegionTab}"
+                                ToolTip.Tip="Изменить область (Tab)"
                                 Content="{x:Static theming:LucideIcons.scan}"/>
                     </editorControls:AnnotationToolbar.MainToolbarLeadingContent>
                 </editorControls:AnnotationToolbar>
+                <Border x:Name="CaptureActions" Grid.Row="1" IsVisible="False"
+                        HorizontalAlignment="Right" Margin="0,4,0,0" Padding="6"
+                        CornerRadius="4" BorderThickness="1"
+                        Background="{DynamicResource ShareX.Brush.Background.Toolbar}"
+                        BorderBrush="{DynamicResource ShareX.Brush.Border}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Ш" VerticalAlignment="Center"/>
+                        <NumericUpDown x:Name="SelectionWidth" Width="86" Minimum="5"
+                                       FormatString="0" ShowButtonSpinner="False"
+                                       ToolTip.Tip="Ширина области в пикселях"
+                                       ValueChanged="OnSelectionSizeChanged"/>
+                        <TextBlock Text="× В" VerticalAlignment="Center"/>
+                        <NumericUpDown x:Name="SelectionHeight" Width="86" Minimum="5"
+                                       FormatString="0" ShowButtonSpinner="False"
+                                       ToolTip.Tip="Высота области в пикселях"
+                                       ValueChanged="OnSelectionSizeChanged"/>
+                        <Button x:Name="CopyCaptureButton" Content="Копировать" Click="OnCopyCaptureClick" ToolTip.Tip="Ctrl+C"/>
+                        <Button x:Name="SaveCaptureButton" Content="Сохранить" Click="OnSaveCaptureClick" ToolTip.Tip="Ctrl+S · Загрузки"/>
+                        <Button x:Name="FinishCaptureButton" Content="✓" Click="OnFinishCaptureClick" ToolTip.Tip="Сохранить и скопировать (Ctrl+Enter)"/>
+                        <Button Content="×" Click="OnCancelCaptureClick" ToolTip.Tip="Отмена (Esc)"/>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Canvas>
     </Grid>
