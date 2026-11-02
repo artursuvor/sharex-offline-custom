@@ -2,6 +2,12 @@
 
 A personal Windows x64 fork of [ShareX](https://github.com/ShareX/ShareX), focused on local screenshots, annotation, clipboard copying, and file saving. This build adds enforced offline behavior, larger annotation controls, reduced background activity, and an interactive region capture workflow.
 
+## Run the portable build
+
+If you already have the portable package, open **ShareX.exe** in its folder. No installation, command script, or SDK is needed. Keep the entire folder together, including the adjacent libraries and the `Portable` marker.
+
+Settings are stored in the `ShareX` subfolder. The local custom package saves new screenshots directly to the Windows **Downloads** folder; existing screenshots stay in their original locations. **Ctrl+C** copies only, **Ctrl+S** saves only, and **Ctrl+Enter** uses the configured save-and-copy workflow. **Esc** cancels capture.
+
 ## What's new in this fork
 
 ### Enforced offline behavior
